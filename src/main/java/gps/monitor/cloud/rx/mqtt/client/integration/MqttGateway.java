@@ -264,7 +264,7 @@ public class MqttGateway implements Gateway, MqttCallbackExtended {
                 messagePublisherBus.handle(mqttMessage);
             }
             //
-            logger.info("Se ha publicado el mensaje[{}] al host[{}] al topico [{}] correctamente!!!", mqttAsyncClient.getServerURI(), payload, option.getTopicFilter());
+            logger.info("Se ha publicado el mensaje[{}] al host[{}] al topico [{}] correctamente!!!", payload, mqttAsyncClient.getServerURI(), option.getTopicFilter());
 
         } else {
             logger.warn("[{}] Las optiones de publicacion al cliente Mqtt no deberian ser nulas!!!", MqttAsyncClient.class.getSimpleName());
