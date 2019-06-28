@@ -225,18 +225,27 @@ public class MqttGateway implements Gateway, MqttCallbackExtended {
      * @return MqttGateway subcrito a los topicos indicados en las {@link MqttSubscriberOptions}
      * @throws MqttException
      */
-    public MqttGateway subscribeWithOptions() throws MqttException {
-        if (Objects.nonNull(subscriberOptions) && !subscriberOptions.isEmpty()) {
-            MqttSubscriberOption option = subscriberOptions.getDefaultOption();
-            if (Objects.nonNull(option) && option.isValid()) {
-                subscribe(option.getTopicFilter(), option.getQos());
-            }
-            //
-            logger.info("Se ha subcrito al host[{}] al topico [{}] correctamente!!!", mqttAsyncClient.getServerURI(), option.getTopicFilter());
+    public MqttGateway subscribeWithOptions() {
+            if (Objects.nonNull(subscriberOptions) && !subscriberOptions.isEmpty()) {
+                MqttSubscriberOption option = subscriberOptions.getDefaultOption();
+                if (Objects.nonNull(option) && option.isValid()) {
+                    try {
+                        subscribe(option.getTopicFilter(), option.getQos());
+                    } catch (MqttException e) {
+                        logger.error("Error al subsribir al  topico[{}] host[{}] !!!", option.getTopicFilter(),  mqttAsyncClient.getServerURI());
+                        logger.error(e.getMessage(), e);
 
-        } else {
-            logger.warn("[{}] Las optiones de subcripcion al cliente Mqtt no deberian ser nulas!!!", MqttAsyncClient.class.getSimpleName());
-        }
+                    } catch (Exception e) {
+                        logger.error("Error al subsribir al  topico[{}] host[{}]!!!",  option.getTopicFilter(), mqttAsyncClient.getServerURI());
+                        logger.error(e.getMessage(), e);
+                    }
+                }
+                //
+                logger.info("Se ha subcrito al topico[{}] host[{}] correctamente!!!", mqttAsyncClient.getServerURI(), option.getTopicFilter());
+
+            } else {
+                logger.warn("[{}] Las optiones de subcripcion al cliente Mqtt no deberian ser nulas!!!", MqttAsyncClient.class.getSimpleName());
+            }
         return this;
     }
 
@@ -544,14 +553,9 @@ public class MqttGateway implements Gateway, MqttCallbackExtended {
     @Override
     public void connectComplete(boolean b, String host) {
         logger.info("[{}] Se ha conectado completamente el cliente al host [{}]", MqttGateway.class.getSimpleName(), host);
-        try {
-            subscribeWithOptions();
-        }catch (MqttException e){
-            logger.error(e.getMessage(), e);
+        //
+        subscribeWithOptions();
 
-        } catch (Exception e){
-            logger.error(e.getMessage(), e);
-        }
     }
 
     /**

@@ -518,12 +518,9 @@ public class MqttGatewayBuilder {
             } // end while
             logger.info("[{}] Se ha conectado correctamente el server [{}]!!!",
                     MqttGateway.class.getSimpleName(), mqttGateway.getMqttAsyncClient().getServerURI());
+             // subscribe
+             mqttGateway.subscribeWithOptions();
 
-            try {
-                mqttGateway.subscribeWithOptions();
-            }catch (MqttException e4){
-                    logger.error(e4.getMessage(), e4);
-            }
         }
     }// end class
 }
