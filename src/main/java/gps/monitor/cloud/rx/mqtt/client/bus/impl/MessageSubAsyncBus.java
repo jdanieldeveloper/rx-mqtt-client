@@ -11,7 +11,7 @@ import java.util.function.Consumer;
 /**
  * Representa la implementación de un {@link Bus} reactivo a traves de un {@link WorkQueueProcessor}
  * <p>
- * {@link MessageSubscriberAsyncBus} tiene el proposito de consumir mensajes de los topicos subcritos a traves del
+ * {@link MessageSubAsyncBus} tiene el proposito de consumir mensajes de los topicos subcritos a traves del
  * {@link gps.monitor.cloud.rx.mqtt.client.integration.MqttGateway}.
  * <p>
  * Este bus trabaja parecido a una cola, 1 de los {@link Consumer} subscritos toma el mensaje actual del bus y lo procesa, este, no tiene garantia
@@ -20,25 +20,13 @@ import java.util.function.Consumer;
  * @author daniel.carvajal
  * @see <a href="https://projectreactor.io/docs/core/release/api/reactor/core/publisher/WorkQueueProcessor.html">Project Reactor WorkQueueProcessor</a>
  */
-public class MessageSubscriberAsyncBus implements Bus {
+public class MessageSubAsyncBus implements Bus {
 
-    private static MessageSubscriberAsyncBus mqttSubscriberBus;
+    private static MessageSubAsyncBus mqttSubscriberBus;
 
     private static WorkQueueProcessor<Object> processor = WorkQueueProcessor.create();
 
-    private static final Logger logger = LoggerFactory.getLogger(MessageSubscriberAsyncBus.class);
-
-    /**
-     * Singleton para el bus
-     *
-     * @return nueva instancia del Bus
-     */
-    public static MessageSubscriberAsyncBus getInstance() {
-        if (mqttSubscriberBus == null) {
-            mqttSubscriberBus = new MessageSubscriberAsyncBus();
-        }
-        return mqttSubscriberBus;
-    }
+    private static final Logger logger = LoggerFactory.getLogger(MessageSubAsyncBus.class);
 
 
     /**
@@ -50,7 +38,7 @@ public class MessageSubscriberAsyncBus implements Bus {
             .publish()
                 .autoConnect()
              .subscribe(subscriber, e -> {
-                logger.error("[{}] Se ha producido un error en el flujo del subcriptor asincronico!!!", MessagePublisherBus.class.getSimpleName());
+                logger.error("[{}] Se ha producido un error en el flujo del subcriptor asincronico!!!", MessagePubBus.class.getSimpleName());
                 logger.error(e.getMessage(), e);
              });
     }
@@ -66,7 +54,7 @@ public class MessageSubscriberAsyncBus implements Bus {
                 .autoConnect();
         for (Consumer<Object> subscriber : subscribers) {
             processor.subscribe(subscriber, e -> {
-                logger.error("[{}] Se ha producido un error en el flujo del subcriptor asincronico!!!", MessagePublisherBus.class.getSimpleName());
+                logger.error("[{}] Se ha producido un error en el flujo del subcriptor asincronico!!!", MessagePubBus.class.getSimpleName());
                 logger.error(e.getMessage(), e);
             });
         }

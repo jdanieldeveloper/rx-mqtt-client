@@ -12,31 +12,19 @@ import java.util.function.Consumer;
 /**
  * Representa la implementacion de un {@link Bus} reactivo a traves de un {@link EmitterProcessor}
  * <p>
- * {@link MessagePublisherBus} tiene el proposito de mantener un {@link gps.monitor.cloud.rx.mqtt.client.publisher.MessagePublicator}
+ * {@link MessagePubBus} tiene el proposito de mantener un {@link gps.monitor.cloud.rx.mqtt.client.publisher.MessagePublicator}
  * que publica mensajes enviados a un topico traves de {@link gps.monitor.cloud.rx.mqtt.client.integration.MqttGateway}
  *
  * @author daniel.carvajal
  * @see <a href="https://projectreactor.io/docs/core/release/api/reactor/core/publisher/EmitterProcessor.html">Project Reactor EmitterProcessor</a>
  */
-public class MessagePublisherBus implements Bus {
+public class MessagePubBus implements Bus {
 
-    private static MessagePublisherBus messagePublisherBus;
+    private static MessagePubBus messagePublisherBus;
 
     private static EmitterProcessor<Object> processor = EmitterProcessor.create();
 
-    private static final Logger logger = LoggerFactory.getLogger(MessagePublisherBus.class);
-
-    /**
-     * Singleton para el bus
-     *
-     * @return nueva instancia del Bus
-     */
-    public static MessagePublisherBus getInstance() {
-        if (messagePublisherBus == null) {
-            messagePublisherBus = new MessagePublisherBus();
-        }
-        return messagePublisherBus;
-    }
+    private static final Logger logger = LoggerFactory.getLogger(MessagePubBus.class);
 
     /**
      * {@inheritDoc}
@@ -48,7 +36,7 @@ public class MessagePublisherBus implements Bus {
                 .autoConnect()
             .delayElements(Duration.ofMillis(500))
                 .subscribe(subscriber, e -> {
-                    logger.error("[{}] Se ha producido un error en el flujo del publicador!!!", MessagePublisherBus.class.getSimpleName());
+                    logger.error("[{}] Se ha producido un error en el flujo del publicador!!!", MessagePubBus.class.getSimpleName());
                     logger.error(e.getMessage(), e);
                 });
     }

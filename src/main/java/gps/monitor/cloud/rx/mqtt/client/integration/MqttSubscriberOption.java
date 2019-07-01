@@ -1,8 +1,12 @@
 package gps.monitor.cloud.rx.mqtt.client.integration;
 
+import gps.monitor.cloud.rx.mqtt.client.bus.Bus;
+import gps.monitor.cloud.rx.mqtt.client.enums.MessageBusStrategy;
+import gps.monitor.cloud.rx.mqtt.client.subscriber.MessageConsumer;
 import org.eclipse.paho.client.mqttv3.IMqttActionListener;
 import org.eclipse.paho.client.mqttv3.IMqttMessageListener;
 
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -21,6 +25,14 @@ public class MqttSubscriberOption {
     private IMqttActionListener callback;
 
     private IMqttMessageListener messageListener;
+
+    private Bus messageSubscriberBus;
+
+    private MessageConsumer messageSubcriptor;
+
+    public List<MessageConsumer<Object>> messageSubscritors;
+
+    private MessageBusStrategy subscriberBusStrategy;
 
     public int getIndex() {
         return index;
@@ -68,6 +80,38 @@ public class MqttSubscriberOption {
 
     public void setMessageListener(IMqttMessageListener messageListener) {
         this.messageListener = messageListener;
+    }
+
+    public Bus getMessageSubscriberBus() {
+        return messageSubscriberBus;
+    }
+
+    public void setMessageSubscriberBus(Bus messageSubscriberBus) {
+        this.messageSubscriberBus = messageSubscriberBus;
+    }
+
+    public MessageConsumer getMessageSubcriptor() {
+        return messageSubcriptor;
+    }
+
+    public void setMessageSubcriptor(MessageConsumer messageSubcriptor) {
+        this.messageSubcriptor = messageSubcriptor;
+    }
+
+    public List<MessageConsumer<Object>> getMessageSubscritors() {
+        return messageSubscritors;
+    }
+
+    public void setMessageSubscritors(List<MessageConsumer<Object>> messageSubscritors) {
+        this.messageSubscritors = messageSubscritors;
+    }
+
+    public MessageBusStrategy getSubscriberBusStrategy() {
+        return subscriberBusStrategy;
+    }
+
+    public void setSubscriberBusStrategy(MessageBusStrategy subscriberBusStrategy) {
+        this.subscriberBusStrategy = subscriberBusStrategy;
     }
 
     public boolean isValid(){

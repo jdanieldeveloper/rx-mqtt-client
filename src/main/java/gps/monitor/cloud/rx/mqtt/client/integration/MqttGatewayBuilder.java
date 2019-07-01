@@ -1,10 +1,7 @@
 package gps.monitor.cloud.rx.mqtt.client.integration;
 
 import gps.monitor.cloud.rx.mqtt.client.bus.Bus;
-import gps.monitor.cloud.rx.mqtt.client.bus.impl.MessagePublisherBus;
-import gps.monitor.cloud.rx.mqtt.client.bus.impl.MessageSubscriberAsyncBus;
-import gps.monitor.cloud.rx.mqtt.client.bus.impl.MessageSubscriberAsyncParallelBus;
-import gps.monitor.cloud.rx.mqtt.client.bus.impl.MessageSubscriberBus;
+import gps.monitor.cloud.rx.mqtt.client.bus.impl.*;
 import gps.monitor.cloud.rx.mqtt.client.enums.MessageBusStrategy;
 import gps.monitor.cloud.rx.mqtt.client.subscriber.MessageConsumer;
 import gps.monitor.cloud.rx.mqtt.client.publisher.MessagePublicator;
@@ -43,9 +40,9 @@ public class MqttGatewayBuilder {
     // buffer options
     public DisconnectedBufferOptions bufferOptions;
 
-    // subcriber
-    public MessageConsumer messageSubscritor;
-    public List<Consumer<Object>> messageSubscritors;
+    // internal subscriber bus
+    private Bus messageSubscriberBus;
+    private MessageConsumer internalSubConsumer;
     public MessageBusStrategy subscriberBusStrategy;
     // subscriber options
     public MqttSubscriberOptions subscriberOptions;
@@ -122,11 +119,9 @@ public class MqttGatewayBuilder {
                 RetryConnection retryConnection = RetryConnection.getInstance(mqttGateway);
                 retryConnection.start();
             }
-            // message publisher
-            createMessagePublisher();
 
-            // message subscriber
-            createMessageSubscriber();
+            // message publisher
+            createMessagePublisher(); //TODO cambiar a modo multioptions
 
             if(debug){
                 Debug cDebug = mqttAsyncClient.getDebug();
@@ -170,7 +165,7 @@ public class MqttGatewayBuilder {
             mqttGateway.setSubscriberOptions(subscriberOptions);
         }else{
             // default options
-            mqttGateway.setSubscriberOptions(new MqttSubscriberOptions());
+            mqttGateway.setSubscriberOptions(MqttSubscriberOptions.getInstance());
         }
         if(Objects.nonNull(publisherOptions)){
             mqttGateway.setPublisherOptions(publisherOptions);
@@ -181,47 +176,10 @@ public class MqttGatewayBuilder {
     }
 
     /**
-     * Crea el {@link Bus} de subcripcion con todos sus parametros
-     *
-     */
-    public void createMessageSubscriber(){
-        Bus messageSubscriberBus = null;
-        if(Objects.nonNull(subscriberBusStrategy)) {
-            switch (subscriberBusStrategy) {
-                case ASYNCHRONOUS_STRATEGY:
-                    messageSubscriberBus = MessageSubscriberAsyncBus.getInstance();
-                    messageSubscriberBus.subscribe(messageSubscritors);
-                    mqttGateway.setMessageSubscriberBus(messageSubscriberBus);
-                    mqttGateway.setMessageSubscritors(messageSubscritors);
-                    break;
-                case ASYNCHRONOUS_PARALLEL_STRATEGY:
-                    messageSubscriberBus = MessageSubscriberAsyncParallelBus.getInstance();
-                    messageSubscriberBus.subscribe(messageSubscritor);
-                    mqttGateway.setMessageSubscriberBus(messageSubscriberBus);
-                    mqttGateway.setMessageSubscritors(messageSubscritors);
-                    break;
-                default:
-                    // default strategy SECUENCE_STRATEGY
-                    messageSubscriberBus = MessageSubscriberBus.getInstance();
-                    messageSubscriberBus.subscribe(messageSubscritor);
-                    mqttGateway.setMessageSubscriberBus(messageSubscriberBus);
-                    mqttGateway.setMessageSubcriptor(messageSubscritor);
-                    break;
-            }
-        }else{
-            // default strategy
-            messageSubscriberBus = MessageSubscriberBus.getInstance();
-            messageSubscriberBus.subscribe(messageSubscritor);
-            mqttGateway.setMessageSubscriberBus(messageSubscriberBus);
-            mqttGateway.setMessageSubcriptor(messageSubscritor);
-        }
-    }
-
-    /**
      * Crea el {@link Bus} de publicacion con todos sus parametros
      *
      */
-    public void createMessagePublisher(){
+    private void createMessagePublisher(){
         Bus messagePublisherBus = null;
         if(Objects.nonNull(publisherBusStrategy)) {
             switch (publisherBusStrategy) {
@@ -229,7 +187,7 @@ public class MqttGatewayBuilder {
                     messagePublicator = new MessagePublicator();
                     messagePublicator.setMqttGateway(mqttGateway);
                     //
-                    messagePublisherBus = MessagePublisherBus.getInstance();
+                    messagePublisherBus = new MessagePubBus();
                     messagePublisherBus.subscribe(messagePublicator);
                     break;
                 default:
@@ -237,7 +195,7 @@ public class MqttGatewayBuilder {
                     messagePublicator = new MessagePublicator();
                     messagePublicator.setMqttGateway(mqttGateway);
                     //
-                    messagePublisherBus = MessagePublisherBus.getInstance();
+                    messagePublisherBus = new MessageNativePubBus();
                     messagePublisherBus.subscribe(messagePublicator);
                     break;
             }
@@ -246,7 +204,7 @@ public class MqttGatewayBuilder {
             messagePublicator = new MessagePublicator();
             messagePublicator.setMqttGateway(mqttGateway);
             //
-            messagePublisherBus = MessagePublisherBus.getInstance();
+            messagePublisherBus = new MessageNativePubBus();
             messagePublisherBus.subscribe(messagePublicator);
         }
         mqttGateway.setMessagePublicator(messagePublicator);
@@ -365,6 +323,10 @@ public class MqttGatewayBuilder {
         public Object userContext;
         public IMqttActionListener callback;
         public IMqttMessageListener messageListener;
+        public Bus messageSubscriberBus;
+        public MessageConsumer messageSubcriptor;
+        public List<MessageConsumer<Object>> messageSubscritors;
+        public MessageBusStrategy subscriberBusStrategy;
 
         /**
          * Consolida todos los parametros del {@link SubscriberOptionsBuilder}
@@ -384,17 +346,18 @@ public class MqttGatewayBuilder {
          */
         public MqttSubscriberOptions createSubcriberOptions() {
             MqttSubscriberOption subscriberOption = new MqttSubscriberOption();
-            //TODO add 1..n options
-            subscriberOption.setIndex(0); // default option
-
+            //
             subscriberOption.setQos(qos);
             subscriberOption.setTopicFilter(topicFilter);
             subscriberOption.setUserContext(userContext);
             subscriberOption.setCallback(callback);
             subscriberOption.setMessageListener(messageListener);
-
-            //TODO add 1..n options
-            MqttSubscriberOptions subscriberOptions = new MqttSubscriberOptions();
+            subscriberOption.setMessageSubscriberBus(messageSubscriberBus);
+            subscriberOption.setMessageSubcriptor(messageSubcriptor);
+            subscriberOption.setMessageSubscritors(messageSubscritors);
+            subscriberOption.setSubscriberBusStrategy(subscriberBusStrategy);
+            //
+            MqttSubscriberOptions subscriberOptions = MqttSubscriberOptions.getInstance();
             subscriberOptions.addOption(subscriberOption);
             //
             return subscriberOptions;

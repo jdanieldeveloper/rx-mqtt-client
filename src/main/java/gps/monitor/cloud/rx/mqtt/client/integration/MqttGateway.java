@@ -1,9 +1,13 @@
 package gps.monitor.cloud.rx.mqtt.client.integration;
 
 import gps.monitor.cloud.rx.mqtt.client.bus.Bus;
+import gps.monitor.cloud.rx.mqtt.client.bus.impl.MessageNativeSubBus;
+import gps.monitor.cloud.rx.mqtt.client.bus.impl.MessageSubAsyncBus;
+import gps.monitor.cloud.rx.mqtt.client.bus.impl.MessageSubAsyncParallelBus;
+import gps.monitor.cloud.rx.mqtt.client.bus.impl.MessageSubBus;
 import gps.monitor.cloud.rx.mqtt.client.enums.MessageBusStrategy;
+import gps.monitor.cloud.rx.mqtt.client.listener.DefaultMqttListener;
 import gps.monitor.cloud.rx.mqtt.client.message.MessageWrapper;
-import gps.monitor.cloud.rx.mqtt.client.subscriber.MessageConsumer;
 import gps.monitor.cloud.rx.mqtt.client.publisher.MessagePublisher;
 import org.eclipse.paho.client.mqttv3.*;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
@@ -12,9 +16,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.charset.StandardCharsets;
-import java.util.List;
 import java.util.Objects;
-import java.util.function.Consumer;
 
 /**
  * Representa un MQTT Gateway
@@ -39,11 +41,6 @@ public class MqttGateway implements Gateway, MqttCallbackExtended {
     private MqttConnectOptions connectOptions;
     private DisconnectedBufferOptions bufferOptions;
 
-    // subscriber
-    private Bus messageSubscriberBus;
-    private MessageConsumer messageSubcriptor;
-    public List<Consumer<Object>> messageSubscritors;
-    private MessageBusStrategy subscriberBusStrategy;
     // options
     private MqttSubscriberOptions subscriberOptions;
 
@@ -54,7 +51,7 @@ public class MqttGateway implements Gateway, MqttCallbackExtended {
     // options
     private MqttPublisherOptions publisherOptions;
 
-    private static final Logger logger = LoggerFactory.getLogger(MqttGateway.class.getCanonicalName());
+    private static final Logger logger = LoggerFactory.getLogger(MqttGateway.class);
 
     /**
      * Conecta el cliente al broker MQTT
@@ -199,7 +196,6 @@ public class MqttGateway implements Gateway, MqttCallbackExtended {
      * Re-Conecta el cliente MQTT del broker. Este metodo no funciona correctamente en algunos casos de configuracion ni en redes inestables
      * por favor use {@link MqttConnectOptions#automaticReconnect}
      *
-     * @throws MqttException
      */
     public void reconnect() throws MqttException {
         try {
@@ -223,33 +219,79 @@ public class MqttGateway implements Gateway, MqttCallbackExtended {
      * Metodo de subcripcion a todos los topicos agregados a las {@link MqttSubscriberOptions}
      *
      * @return MqttGateway subcrito a los topicos indicados en las {@link MqttSubscriberOptions}
-     * @throws MqttException
      */
     public MqttGateway subscribeWithOptions() {
-            if (Objects.nonNull(subscriberOptions) && !subscriberOptions.isEmpty()) {
-                MqttSubscriberOption option = subscriberOptions.getDefaultOption();
-                if (Objects.nonNull(option) && option.isValid()) {
-                    try {
-                        subscribe(option.getTopicFilter(), option.getQos());
-                    } catch (MqttException e) {
-                        logger.error("Error al subsribir al  topico[{}] host[{}] !!!", option.getTopicFilter(),  mqttAsyncClient.getServerURI());
-                        logger.error(e.getMessage(), e);
 
-                    } catch (Exception e) {
-                        logger.error("Error al subsribir al  topico[{}] host[{}]!!!",  option.getTopicFilter(), mqttAsyncClient.getServerURI());
-                        logger.error(e.getMessage(), e);
+        if (Objects.nonNull(subscriberOptions) && !subscriberOptions.isEmpty()) {
+            for (MqttSubscriberOption option : subscriberOptions.getOptions()) {
+                try {
+                    Bus messageSubscriberBus = null;
+                    if (Objects.nonNull(option) && option.isValid()) {
+                        DefaultMqttListener mqttListener = new DefaultMqttListener(); //TODO cambiar por uno injectable por parametros
+                        if (Objects.nonNull(option.getSubscriberBusStrategy())) {
+                            switch (option.getSubscriberBusStrategy()) {
+                                case SECUENCE_STRATEGY:
+                                    messageSubscriberBus = new MessageSubBus();
+                                    messageSubscriberBus.subscribe(option.getMessageSubcriptor());
+                                    break;
+                                case ASYNCHRONOUS_STRATEGY:
+                                    messageSubscriberBus = new MessageSubAsyncBus();
+                                    messageSubscriberBus.subscribe(option.getMessageSubcriptor());
+                                    break;
+                                case ASYNCHRONOUS_PARALLEL_STRATEGY:
+                                    messageSubscriberBus = new MessageSubAsyncParallelBus();
+                                    messageSubscriberBus.subscribe(option.getMessageSubcriptor());
+                                    break;
+                                default:
+                                    // default strategy native
+                                    option.setSubscriberBusStrategy(MessageBusStrategy.NATIVE_STRATEGY);
+                                    //
+                                    messageSubscriberBus = new MessageNativeSubBus();
+                                    messageSubscriberBus.subscribe(option.getMessageSubcriptor());
+                                    break;
+                            }
+                            mqttListener.setMessageSubscriberBus(messageSubscriberBus);
+                            option.setMessageListener(mqttListener);
+
+                            //
+                            subscribe(option.getTopicFilter(), option.getQos(), mqttListener);
+                        } else {
+                            // default strategy native
+                            messageSubscriberBus = new MessageNativeSubBus();
+                            messageSubscriberBus.subscribe(option.getMessageSubcriptor());
+                            mqttListener.setMessageSubscriberBus(messageSubscriberBus);
+                            //
+                            option.setSubscriberBusStrategy(MessageBusStrategy.NATIVE_STRATEGY);
+                            option.setMessageSubscriberBus(messageSubscriberBus);
+                            option.setMessageListener(mqttListener);
+                            //
+                            subscribe(option.getTopicFilter(), option.getQos(), mqttListener);
+                        }
+                    } else {
+                        // default strategy native
+                        messageSubscriberBus = new MessageNativeSubBus();
+                        messageSubscriberBus.subscribe(option.getMessageSubcriptor());
+                        DefaultMqttListener mqttListener = new DefaultMqttListener();
+                        mqttListener.setMessageSubscriberBus(messageSubscriberBus);
+                        //
+                        subscribe(option.getTopicFilter(), option.getQos(), mqttListener);
                     }
+                } catch (MqttException e) {
+                    logger.error("Error al subsribir al  topico[{}] host[{}] !!!", option.getTopicFilter(), mqttAsyncClient.getServerURI());
+                    logger.error(e.getMessage(), e);
+
+                } catch (Exception e) {
+                    logger.error("Error al subsribir al  topico[{}] host[{}]!!!", option.getTopicFilter(), mqttAsyncClient.getServerURI());
+                    logger.error(e.getMessage(), e);
                 }
                 //
-                logger.info("Se ha subcrito al topico[{}] host[{}] correctamente!!!", mqttAsyncClient.getServerURI(), option.getTopicFilter());
-
-            } else {
-                logger.warn("[{}] Las optiones de subcripcion al cliente Mqtt no deberian ser nulas!!!", MqttAsyncClient.class.getSimpleName());
-            }
+                logger.info("Se ha subcrito al topico[{}] host[{}] correctamente!!!", option.getTopicFilter(), mqttAsyncClient.getServerURI());
+            } // end for
+        } else {
+            logger.warn("[{}] Las optiones de subcripcion al cliente Mqtt no deberian ser nulas!!!", MqttAsyncClient.class.getSimpleName());
+        }
         return this;
     }
-
-    //TODO metodo subcriptor por subcriber option
 
 
     /**
@@ -273,7 +315,9 @@ public class MqttGateway implements Gateway, MqttCallbackExtended {
                 messagePublisherBus.handle(mqttMessage);
             }
             //
-            logger.info("Se ha publicado el mensaje[{}] al host[{}] al topico [{}] correctamente!!!", payload, mqttAsyncClient.getServerURI(), option.getTopicFilter());
+            if(logger.isDebugEnabled()) {
+                logger.debug("Se ha publicado el mensaje[{}] al host[{}] al topico [{}] correctamente!!!", payload, mqttAsyncClient.getServerURI(), option.getTopicFilter());
+            }
 
         } else {
             logger.warn("[{}] Las optiones de publicacion al cliente Mqtt no deberian ser nulas!!!", MqttAsyncClient.class.getSimpleName());
@@ -293,7 +337,6 @@ public class MqttGateway implements Gateway, MqttCallbackExtended {
     public void subscribe(String topicFilter, int qos) throws MqttException {
         try {
             mqttAsyncClient.subscribe(topicFilter, qos);
-
         } catch (MqttException e) {
             logger.error("[{}] Se ha producido un error al subscribir al topico[{}] del cliente Mqtt!!!", MqttGateway.class.getSimpleName(), topicFilter);
             logger.error(e.getMessage(), e);
@@ -397,7 +440,7 @@ public class MqttGateway implements Gateway, MqttCallbackExtended {
      */
     public void publish(MessageWrapper message) throws MqttException {
         try {
-            messageSubscriberBus.handle(message);
+            messagePublisherBus.handle(message);
 
         } catch (Exception e) {
             logger.error("[{}] Se ha producido un error al publicar el mensaje [{}] en el topico [{}]",
@@ -523,25 +566,12 @@ public class MqttGateway implements Gateway, MqttCallbackExtended {
     /**
      * Recibe los mensajes desde los topicos subcritos por el {@link MqttGateway} y luego los publica en un {@link Bus}
      *
-     * @param topic
+     * @param mqttTopic
      * @param mqttMessage
      */
     @Override
-    public void messageArrived(String topic, MqttMessage mqttMessage) {
-        if (!mqttMessage.isDuplicate()) {
-            MessageWrapper message = new MessageWrapper();
-            //message.setId();
-            message.setTopicFilter(topic);
-            message.setPayload(mqttMessage.getPayload());
-            message.setQos(mqttMessage.getQos());
-            message.setRetained(mqttMessage.isRetained());
-            //
-            messageSubscriberBus.handle(message);
-        }else{
-            if (logger.isDebugEnabled()) {
-                logger.debug("[{}] Se ha detectado un mensaje[{}] duplicado!!! ", MqttGateway.class.getSimpleName(), mqttMessage.toString());
-            }
-        }
+    @Deprecated
+    public void messageArrived(String mqttTopic, MqttMessage mqttMessage) {
     }
 
     /**
@@ -647,38 +677,6 @@ public class MqttGateway implements Gateway, MqttCallbackExtended {
 
     public void setBufferOptions(DisconnectedBufferOptions bufferOptions) {
         this.bufferOptions = bufferOptions;
-    }
-
-    public Bus getMessageSubscriberBus() {
-        return messageSubscriberBus;
-    }
-
-    public void setMessageSubscriberBus(Bus messageSubscriberBus) {
-        this.messageSubscriberBus = messageSubscriberBus;
-    }
-
-    public MessageConsumer getMessageSubcriptor() {
-        return messageSubcriptor;
-    }
-
-    public void setMessageSubcriptor(MessageConsumer messageSubcriptor) {
-        this.messageSubcriptor = messageSubcriptor;
-    }
-
-    public List<Consumer<Object>> getMessageSubscritors() {
-        return messageSubscritors;
-    }
-
-    public void setMessageSubscritors(List<Consumer<Object>> messageSubscritors) {
-        this.messageSubscritors = messageSubscritors;
-    }
-
-    public MessageBusStrategy getSubscriberBusStrategy() {
-        return subscriberBusStrategy;
-    }
-
-    public void setSubscriberBusStrategy(MessageBusStrategy subscriberBusStrategy) {
-        this.subscriberBusStrategy = subscriberBusStrategy;
     }
 
     public MqttSubscriberOptions getSubscriberOptions() {

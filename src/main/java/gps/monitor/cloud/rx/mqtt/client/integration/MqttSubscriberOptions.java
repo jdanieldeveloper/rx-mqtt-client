@@ -26,38 +26,49 @@ public class MqttSubscriberOptions {
 
     private Object[] userContext;
 
-    private List<MqttSubscriberOption> mqttSubscriberOptions;
+    private List<MqttSubscriberOption> subscriberOptions;
 
-    public MqttSubscriberOptions() {
-        this.mqttSubscriberOptions = new ArrayList<>();
+    private static MqttSubscriberOptions mqttSubscriberOptions;
+
+    public static MqttSubscriberOptions getInstance() {
+        if (mqttSubscriberOptions == null) {
+            mqttSubscriberOptions = new MqttSubscriberOptions();
+        }
+        return mqttSubscriberOptions;
+    }
+
+    private MqttSubscriberOptions() {
+        this.subscriberOptions = new ArrayList<>();
     }
 
     public MqttSubscriberOption get(int index) {
-        return mqttSubscriberOptions.get(index);
+        return subscriberOptions.get(index);
     }
 
-    public MqttSubscriberOption getDefaultOption() {
-        return mqttSubscriberOptions.get(0);
+    public List<MqttSubscriberOption> getOptions() {
+        return subscriberOptions;
     }
 
     public boolean addOption(MqttSubscriberOption option){
-        return mqttSubscriberOptions.add(option);
+        //add index
+        option.setIndex(subscriberOptions.size());
+        return subscriberOptions.add(option);
     }
 
     public boolean removeOption(MqttSubscriberOption option){
-        return mqttSubscriberOptions.removeIf(opt -> (opt.getIndex() == option.getIndex()));
+        return subscriberOptions.removeIf(opt -> (opt.getIndex() == option.getIndex()));
     }
 
     public void setOptions(List<MqttSubscriberOption> mqttSubscriberOptions) {
-        this.mqttSubscriberOptions = mqttSubscriberOptions;
+        this.subscriberOptions = mqttSubscriberOptions;
     }
 
     public int size(){
-        return mqttSubscriberOptions.size();
+        return subscriberOptions.size();
     }
 
     public boolean isEmpty(){
-        return mqttSubscriberOptions.isEmpty();
+        return subscriberOptions.isEmpty();
     }
 
     public int[] toQos() {
@@ -65,7 +76,7 @@ public class MqttSubscriberOptions {
     }
 
     public String[] toTopicFilters() {
-        return (String[]) mqttSubscriberOptions
+        return (String[]) subscriberOptions
                     .stream()
                         .map(t -> t.getTopicFilter())
                 .collect(Collectors.toList())
@@ -73,7 +84,7 @@ public class MqttSubscriberOptions {
     }
 
     public IMqttMessageListener[] toMessageListeners() {
-        return (IMqttMessageListener[]) mqttSubscriberOptions
+        return (IMqttMessageListener[]) subscriberOptions
                     .stream()
                         .map(t -> t.getMessageListener())
                 .collect(Collectors.toList())
@@ -81,7 +92,7 @@ public class MqttSubscriberOptions {
     }
 
     public IMqttActionListener[] toCallbacks() {
-        return (IMqttActionListener[]) mqttSubscriberOptions
+        return (IMqttActionListener[]) subscriberOptions
                     .stream()
                         .map(t -> t.getCallback())
                 .collect(Collectors.toList())
@@ -89,7 +100,7 @@ public class MqttSubscriberOptions {
     }
 
     public Object[] toUserContexts() {
-        return (Object[]) mqttSubscriberOptions
+        return (Object[]) subscriberOptions
                     .stream()
                         .map(t -> t.getUserContext())
                 .collect(Collectors.toList())
