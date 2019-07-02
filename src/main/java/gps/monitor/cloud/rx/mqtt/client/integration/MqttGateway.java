@@ -225,70 +225,25 @@ public class MqttGateway implements Gateway, MqttCallbackExtended {
         if (Objects.nonNull(subscriberOptions) && !subscriberOptions.isEmpty()) {
             for (MqttSubscriberOption option : subscriberOptions.getOptions()) {
                 try {
-                    Bus messageSubscriberBus = null;
                     if (Objects.nonNull(option) && option.isValid()) {
-                        DefaultMqttListener mqttListener = new DefaultMqttListener(); //TODO cambiar por uno injectable por parametros
-                        if (Objects.nonNull(option.getSubscriberBusStrategy())) {
-                            switch (option.getSubscriberBusStrategy()) {
-                                case SECUENCE_STRATEGY:
-                                    messageSubscriberBus = new MessageSubBus();
-                                    messageSubscriberBus.subscribe(option.getMessageSubcriptor());
-                                    break;
-                                case ASYNCHRONOUS_STRATEGY:
-                                    messageSubscriberBus = new MessageSubAsyncBus();
-                                    messageSubscriberBus.subscribe(option.getMessageSubcriptor());
-                                    break;
-                                case ASYNCHRONOUS_PARALLEL_STRATEGY:
-                                    messageSubscriberBus = new MessageSubAsyncParallelBus();
-                                    messageSubscriberBus.subscribe(option.getMessageSubcriptor());
-                                    break;
-                                default:
-                                    // default strategy native
-                                    option.setSubscriberBusStrategy(MessageBusStrategy.NATIVE_STRATEGY);
-                                    //
-                                    messageSubscriberBus = new MessageNativeSubBus();
-                                    messageSubscriberBus.subscribe(option.getMessageSubcriptor());
-                                    break;
-                            }
-                            mqttListener.setMessageSubscriberBus(messageSubscriberBus);
-                            option.setMessageListener(mqttListener);
+                        subscribe(option.getTopicFilter(), option.getQos(), option.getMessageListener());
 
-                            //
-                            subscribe(option.getTopicFilter(), option.getQos(), mqttListener);
-                        } else {
-                            // default strategy native
-                            messageSubscriberBus = new MessageNativeSubBus();
-                            messageSubscriberBus.subscribe(option.getMessageSubcriptor());
-                            mqttListener.setMessageSubscriberBus(messageSubscriberBus);
-                            //
-                            option.setSubscriberBusStrategy(MessageBusStrategy.NATIVE_STRATEGY);
-                            option.setMessageSubscriberBus(messageSubscriberBus);
-                            option.setMessageListener(mqttListener);
-                            //
-                            subscribe(option.getTopicFilter(), option.getQos(), mqttListener);
-                        }
                     } else {
-                        // default strategy native
-                        messageSubscriberBus = new MessageNativeSubBus();
-                        messageSubscriberBus.subscribe(option.getMessageSubcriptor());
-                        DefaultMqttListener mqttListener = new DefaultMqttListener();
-                        mqttListener.setMessageSubscriberBus(messageSubscriberBus);
-                        //
-                        subscribe(option.getTopicFilter(), option.getQos(), mqttListener);
+                        logger.warn("[{}] Las opciones de subcripcion no son validas!!!", MqttGateway.class.getSimpleName());
                     }
                 } catch (MqttException e) {
-                    logger.error("Error al subsribir al  topico[{}] host[{}] !!!", option.getTopicFilter(), mqttAsyncClient.getServerURI());
+                    logger.error("[{}] Error al subsribir al  topico[{}] host[{}] !!!", MqttGateway.class.getSimpleName(), option.getTopicFilter(), mqttAsyncClient.getServerURI());
                     logger.error(e.getMessage(), e);
 
                 } catch (Exception e) {
-                    logger.error("Error al subsribir al  topico[{}] host[{}]!!!", option.getTopicFilter(), mqttAsyncClient.getServerURI());
+                    logger.error("[{}] Error al subsribir al  topico[{}] host[{}]!!!", MqttGateway.class.getSimpleName(), option.getTopicFilter(), mqttAsyncClient.getServerURI());
                     logger.error(e.getMessage(), e);
                 }
                 //
-                logger.info("Se ha subcrito al topico[{}] host[{}] correctamente!!!", option.getTopicFilter(), mqttAsyncClient.getServerURI());
+                logger.info("[{}] Se ha subcrito al topico[{}] host[{}] correctamente!!!", MqttGateway.class.getSimpleName(), option.getTopicFilter(), mqttAsyncClient.getServerURI());
             } // end for
         } else {
-            logger.warn("[{}] Las optiones de subcripcion al cliente Mqtt no deberian ser nulas!!!", MqttAsyncClient.class.getSimpleName());
+            logger.warn("[{}] Las optiones de subcripcion al cliente Mqtt no deberian ser nulas!!!", MqttGateway.class.getSimpleName());
         }
         return this;
     }

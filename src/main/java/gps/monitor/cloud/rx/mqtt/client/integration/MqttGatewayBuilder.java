@@ -40,10 +40,6 @@ public class MqttGatewayBuilder {
     // buffer options
     public DisconnectedBufferOptions bufferOptions;
 
-    // internal subscriber bus
-    private Bus messageSubscriberBus;
-    private MessageConsumer internalSubConsumer;
-    public MessageBusStrategy subscriberBusStrategy;
     // subscriber options
     public MqttSubscriberOptions subscriberOptions;
 
@@ -323,10 +319,6 @@ public class MqttGatewayBuilder {
         public Object userContext;
         public IMqttActionListener callback;
         public IMqttMessageListener messageListener;
-        public Bus messageSubscriberBus;
-        public MessageConsumer messageSubcriptor;
-        public List<MessageConsumer<Object>> messageSubscritors;
-        public MessageBusStrategy subscriberBusStrategy;
 
         /**
          * Consolida todos los parametros del {@link SubscriberOptionsBuilder}
@@ -352,10 +344,6 @@ public class MqttGatewayBuilder {
             subscriberOption.setUserContext(userContext);
             subscriberOption.setCallback(callback);
             subscriberOption.setMessageListener(messageListener);
-            subscriberOption.setMessageSubscriberBus(messageSubscriberBus);
-            subscriberOption.setMessageSubcriptor(messageSubcriptor);
-            subscriberOption.setMessageSubscritors(messageSubscritors);
-            subscriberOption.setSubscriberBusStrategy(subscriberBusStrategy);
             //
             MqttSubscriberOptions subscriberOptions = MqttSubscriberOptions.getInstance();
             subscriberOptions.addOption(subscriberOption);
