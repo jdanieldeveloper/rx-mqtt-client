@@ -19,4 +19,14 @@ public class Converters {
     public static String bytesToString(byte[] bytes){
         return new String(bytes, StandardCharsets.UTF_8);
     }
+
+    /**
+     * Convierte de un string a un array de bytes
+     *
+     * @param message
+     * @return array de bytes
+     */
+    public static byte[] stringToBytes(String message){
+        return message.getBytes();
+    }
 }

@@ -1,10 +1,7 @@
 package gps.monitor.cloud.rx.mqtt.client.integration;
 
 import gps.monitor.cloud.rx.mqtt.client.bus.Bus;
-import gps.monitor.cloud.rx.mqtt.client.bus.impl.*;
 import gps.monitor.cloud.rx.mqtt.client.enums.MessageBusStrategy;
-import gps.monitor.cloud.rx.mqtt.client.subscriber.MessageConsumer;
-import gps.monitor.cloud.rx.mqtt.client.publisher.MessagePublicator;
 import gps.monitor.cloud.rx.mqtt.client.publisher.MessagePublisher;
 import org.eclipse.paho.client.mqttv3.*;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
@@ -13,7 +10,6 @@ import org.eclipse.paho.client.mqttv3.util.Debug;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
 
@@ -42,12 +38,6 @@ public class MqttGatewayBuilder {
 
     // subscriber options
     public MqttSubscriberOptions subscriberOptions;
-
-    // publisher
-    public MessagePublisher messagePublicator;
-    public MessageBusStrategy publisherBusStrategy;
-    // publisher options
-    public MqttPublisherOptions publisherOptions;
 
     // gateway
     private MqttGateway mqttGateway;
@@ -116,9 +106,6 @@ public class MqttGatewayBuilder {
                 retryConnection.start();
             }
 
-            // message publisher
-            createMessagePublisher(); //TODO cambiar a modo multioptions
-
             if(debug){
                 Debug cDebug = mqttAsyncClient.getDebug();
                 cDebug.dumpClientDebug();
@@ -140,8 +127,7 @@ public class MqttGatewayBuilder {
      *
      * - {@link DisconnectedBufferOptions}
      * - {@link MqttConnectOptions}
-     * - {@link MqttSubscriberOptions}
-     * - {@link MqttPublisherOptions}
+     * - {@link MqttSubscriberOptions}     *
      *
      */
     public void createClientOptions() {
@@ -163,49 +149,6 @@ public class MqttGatewayBuilder {
             // default options
             mqttGateway.setSubscriberOptions(MqttSubscriberOptions.getInstance());
         }
-        if(Objects.nonNull(publisherOptions)){
-            mqttGateway.setPublisherOptions(publisherOptions);
-        } else{
-            // default options
-            mqttGateway.setPublisherOptions(new MqttPublisherOptions());
-        }
-    }
-
-    /**
-     * Crea el {@link Bus} de publicacion con todos sus parametros
-     *
-     */
-    private void createMessagePublisher(){
-        Bus messagePublisherBus = null;
-        if(Objects.nonNull(publisherBusStrategy)) {
-            switch (publisherBusStrategy) {
-                case SECUENCE_STRATEGY:
-                    messagePublicator = new MessagePublicator();
-                    messagePublicator.setMqttGateway(mqttGateway);
-                    //
-                    messagePublisherBus = new MessagePubBus();
-                    messagePublisherBus.subscribe(messagePublicator);
-                    break;
-                default:
-                    // default strategy
-                    messagePublicator = new MessagePublicator();
-                    messagePublicator.setMqttGateway(mqttGateway);
-                    //
-                    messagePublisherBus = new MessageNativePubBus();
-                    messagePublisherBus.subscribe(messagePublicator);
-                    break;
-            }
-        }else{
-            // default strategy
-            messagePublicator = new MessagePublicator();
-            messagePublicator.setMqttGateway(mqttGateway);
-            //
-            messagePublisherBus = new MessageNativePubBus();
-            messagePublisherBus.subscribe(messagePublicator);
-        }
-        mqttGateway.setMessagePublicator(messagePublicator);
-        mqttGateway.setMessagePublisherBus(messagePublisherBus);
-
     }
 
     /**
@@ -353,57 +296,8 @@ public class MqttGatewayBuilder {
     }
 
     /**
-     * Functional Builder Pattern para construir un {@link PublisherOptionsBuilder}
-     *
-     * @author daniel.carvajal
-     */
-    public static class PublisherOptionsBuilder {
-        public int qos;
-        public String topicFilter;
-        public boolean retained;
-        public Object userContext;
-        public IMqttActionListener callback;
-        public IMqttMessageListener messageListener;
-
-        /**
-         * Consolida todos los parametros del {@link PublisherOptionsBuilder}
-         *
-         * @param builder {@link Consumer} para setear los parametros
-         * @return la instancia del {@link PublisherOptionsBuilder}
-         */
-        public PublisherOptionsBuilder with(Consumer<PublisherOptionsBuilder> builder) {
-            builder.accept(this);
-            return this;
-        }
-
-        /**
-         * Crea las opciones de publicacion para el {@link MqttGateway}
-         *
-         * @return las opciones de publicacion
-         */
-        public MqttPublisherOptions createPublisherOptions() {
-            MqttPublisherOption publisherOption = new MqttPublisherOption();
-            //TODO add 1..n options
-            publisherOption.setIndex(0); // default option
-
-            publisherOption.setQos(qos);
-            publisherOption.setTopicFilter(topicFilter);
-            publisherOption.setRetained(retained);
-            publisherOption.setUserContext(userContext);
-            publisherOption.setCallback(callback);
-            publisherOption.setMessageListener(messageListener);
-
-            //TODO add 1..n options
-            MqttPublisherOptions publisherOptions = new MqttPublisherOptions();
-            publisherOptions.addOption(publisherOption);
-            //
-            return publisherOptions;
-        }
-    }
-
-    /**
      * Thread encargado de realizar el reintento de la conexion al broker si no hay alguna disponble.
-     * Este, se asegura que este conectado y luego ejecuta el metodo {@link MqttGateway#subscriberOptions}
+     * Este, se asegura que este conectado y luego ejecuta el metodo {@link MqttGateway#subscribeWithOptions()}
      * para asegurar la consitencia
      *
      * @author daniel.carvajal

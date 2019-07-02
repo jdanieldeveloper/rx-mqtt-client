@@ -72,11 +72,8 @@ public class MqttSubscriberOption {
 
     public boolean isValid(){
         boolean isValid = false;
-        if((index >= 0) && (qos >= 0) && (qos <= 3) && Objects.nonNull(topicFilter)){
+        if((index >= 0) && (qos >= 0) && (qos <= 3) && Objects.nonNull(topicFilter) && Objects.nonNull(messageListener)){
             isValid = true;
-        }else{
-            throw new IllegalArgumentException(
-                    String.format("Los parametros  index[%] qos[$s] y topicFilter[%s] del subcriber option no son validas", index, qos, topicFilter));
         }
         return isValid;
     }

@@ -1,14 +1,6 @@
 package gps.monitor.cloud.rx.mqtt.client.integration;
 
 import gps.monitor.cloud.rx.mqtt.client.bus.Bus;
-import gps.monitor.cloud.rx.mqtt.client.bus.impl.MessageNativeSubBus;
-import gps.monitor.cloud.rx.mqtt.client.bus.impl.MessageSubAsyncBus;
-import gps.monitor.cloud.rx.mqtt.client.bus.impl.MessageSubAsyncParallelBus;
-import gps.monitor.cloud.rx.mqtt.client.bus.impl.MessageSubBus;
-import gps.monitor.cloud.rx.mqtt.client.enums.MessageBusStrategy;
-import gps.monitor.cloud.rx.mqtt.client.listener.DefaultMqttListener;
-import gps.monitor.cloud.rx.mqtt.client.message.MessageWrapper;
-import gps.monitor.cloud.rx.mqtt.client.publisher.MessagePublisher;
 import org.eclipse.paho.client.mqttv3.*;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 import org.eclipse.paho.client.mqttv3.persist.MqttDefaultFilePersistence;
@@ -43,13 +35,6 @@ public class MqttGateway implements Gateway, MqttCallbackExtended {
 
     // options
     private MqttSubscriberOptions subscriberOptions;
-
-    // message publisher
-    private Bus messagePublisherBus;
-    private MessagePublisher messagePublicator;
-    private MessageBusStrategy publisherBusStrategy;
-    // options
-    private MqttPublisherOptions publisherOptions;
 
     private static final Logger logger = LoggerFactory.getLogger(MqttGateway.class);
 
@@ -227,9 +212,11 @@ public class MqttGateway implements Gateway, MqttCallbackExtended {
                 try {
                     if (Objects.nonNull(option) && option.isValid()) {
                         subscribe(option.getTopicFilter(), option.getQos(), option.getMessageListener());
+                        //
+                        logger.info("[{}] Se ha subcrito al topico[{}] host[{}] correctamente!!!", MqttGateway.class.getSimpleName(), option.getTopicFilter(), mqttAsyncClient.getServerURI());
 
                     } else {
-                        logger.warn("[{}] Las opciones de subcripcion no son validas!!!", MqttGateway.class.getSimpleName());
+                        logger.warn("[{}] No se ha subcrito correctamente!!!. Las opciones de subcripcion no son validas!!!", MqttGateway.class.getSimpleName());
                     }
                 } catch (MqttException e) {
                     logger.error("[{}] Error al subsribir al  topico[{}] host[{}] !!!", MqttGateway.class.getSimpleName(), option.getTopicFilter(), mqttAsyncClient.getServerURI());
@@ -239,48 +226,12 @@ public class MqttGateway implements Gateway, MqttCallbackExtended {
                     logger.error("[{}] Error al subsribir al  topico[{}] host[{}]!!!", MqttGateway.class.getSimpleName(), option.getTopicFilter(), mqttAsyncClient.getServerURI());
                     logger.error(e.getMessage(), e);
                 }
-                //
-                logger.info("[{}] Se ha subcrito al topico[{}] host[{}] correctamente!!!", MqttGateway.class.getSimpleName(), option.getTopicFilter(), mqttAsyncClient.getServerURI());
             } // end for
         } else {
-            logger.warn("[{}] Las optiones de subcripcion al cliente Mqtt no deberian ser nulas!!!", MqttGateway.class.getSimpleName());
+            logger.warn("[{}] Las opciones de subcripcion al cliente Mqtt no deberian ser nulas!!!", MqttGateway.class.getSimpleName());
         }
         return this;
     }
-
-
-    /**
-     * Metodo que publica un mensaje en formato {@link String} a todos los topicos agregados a las {@link MqttPublisherOptions}
-     *
-     * @throws MqttException
-     */
-    public void publishWithOptions(String payload) throws MqttException {
-        if (Objects.nonNull(publisherOptions) && !publisherOptions.isEmpty()) {
-            MqttPublisherOption option = publisherOptions.getDefaultOption();
-            if (Objects.nonNull(option) && option.isValid()) {
-               MessageWrapper mqttMessage = new MessageWrapper();
-                // set options
-                //mqttMessage.setId();
-                mqttMessage.setQos(option.getQos());
-                mqttMessage.setRetained(option.isRetained());
-                mqttMessage.setPayload(payload.getBytes());
-                //
-                mqttMessage.setTopicFilter(option.getTopicFilter());
-                //
-                messagePublisherBus.handle(mqttMessage);
-            }
-            //
-            if(logger.isDebugEnabled()) {
-                logger.debug("Se ha publicado el mensaje[{}] al host[{}] al topico [{}] correctamente!!!", payload, mqttAsyncClient.getServerURI(), option.getTopicFilter());
-            }
-
-        } else {
-            logger.warn("[{}] Las optiones de publicacion al cliente Mqtt no deberian ser nulas!!!", MqttAsyncClient.class.getSimpleName());
-
-        }
-    }
-
-    //TODO un publicador por publisher option
 
     /**
      * Wrapper del metodo nativo {@link MqttAsyncClient#subscribe(String, int)}
@@ -381,25 +332,6 @@ public class MqttGateway implements Gateway, MqttCallbackExtended {
 
         } catch (Exception e) {
             logger.error("[{}] Se ha producido un error al subscribir al topico[{}] del cliente Mqtt!!!", MqttGateway.class.getSimpleName(), topicFilter);
-            logger.error(e.getMessage(), e);
-
-            throw e;
-        }
-    }
-
-    /**
-     * Publica un mensaje con los parametros indicados en  {@link MessageWrapper}
-     *
-     * @param message
-     * @throws MqttException
-     */
-    public void publish(MessageWrapper message) throws MqttException {
-        try {
-            messagePublisherBus.handle(message);
-
-        } catch (Exception e) {
-            logger.error("[{}] Se ha producido un error al publicar el mensaje [{}] en el topico [{}]",
-                        MqttGateway.class.getSimpleName(), new String(message.getPayload(), StandardCharsets.UTF_8), message.getTopicFilter());
             logger.error(e.getMessage(), e);
 
             throw e;
@@ -640,37 +572,5 @@ public class MqttGateway implements Gateway, MqttCallbackExtended {
 
     public void setSubscriberOptions(MqttSubscriberOptions subscriberOptions) {
         this.subscriberOptions = subscriberOptions;
-    }
-
-    public Bus getMessagePublisherBus() {
-        return messagePublisherBus;
-    }
-
-    public void setMessagePublisherBus(Bus messagePublisherBus) {
-        this.messagePublisherBus = messagePublisherBus;
-    }
-
-    public MessagePublisher getMessagePublicator() {
-        return messagePublicator;
-    }
-
-    public void setMessagePublicator(MessagePublisher messagePublicator) {
-        this.messagePublicator = messagePublicator;
-    }
-
-    public MessageBusStrategy getPublisherBusStrategy() {
-        return publisherBusStrategy;
-    }
-
-    public void setPublisherBusStrategy(MessageBusStrategy publisherBusStrategy) {
-        this.publisherBusStrategy = publisherBusStrategy;
-    }
-
-    public MqttPublisherOptions getPublisherOptions() {
-        return publisherOptions;
-    }
-
-    public void setPublisherOptions(MqttPublisherOptions publisherOptions) {
-        this.publisherOptions = publisherOptions;
     }
 }
