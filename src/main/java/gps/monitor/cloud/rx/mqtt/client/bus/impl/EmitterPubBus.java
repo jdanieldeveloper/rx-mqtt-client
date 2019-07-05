@@ -3,28 +3,26 @@ package gps.monitor.cloud.rx.mqtt.client.bus.impl;
 import gps.monitor.cloud.rx.mqtt.client.bus.Bus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import reactor.core.publisher.DirectProcessor;
+import reactor.core.publisher.EmitterProcessor;
 
 import java.time.Duration;
 import java.util.List;
 import java.util.function.Consumer;
 
 /**
- * Representa la implementacion de un {@link Bus} a traves de un {@link DirectProcessor}
+ * Representa la implementacion de un {@link Bus} reactivo a traves de un {@link EmitterProcessor}
  * <p>
- * {@link MessageNativePubBus} tiene el proposito de mantener un {@link gps.monitor.cloud.rx.mqtt.client.publisher.MessagePublicator}
+ * {@link EmitterPubBus} tiene el proposito de mantener un {@link gps.monitor.cloud.rx.mqtt.client.publisher.MessagePublicator}
  * que publica mensajes enviados a un topico traves de {@link gps.monitor.cloud.rx.mqtt.client.integration.MqttGateway}
  *
  * @author daniel.carvajal
- * @see <a href="https://projectreactor.io/docs/core/release/api/reactor/core/publisher/DirectProcessor.html">Project Reactor DirectProcessor</a>
+ * @see <a href="https://projectreactor.io/docs/core/release/api/reactor/core/publisher/EmitterProcessor.html">Project Reactor EmitterProcessor</a>
  */
-public class MessageNativePubBus implements Bus {
+public class EmitterPubBus implements Bus {
 
-    private static MessageNativePubBus messagePublisherBus;
+    private static EmitterProcessor<Object> processor = EmitterProcessor.create();
 
-    private static DirectProcessor<Object> processor = DirectProcessor.create();
-
-    private static final Logger logger = LoggerFactory.getLogger(MessageNativePubBus.class);
+    private static final Logger logger = LoggerFactory.getLogger(EmitterPubBus.class);
 
     /**
      * {@inheritDoc}
@@ -36,7 +34,7 @@ public class MessageNativePubBus implements Bus {
                 .autoConnect()
             .delayElements(Duration.ofMillis(500))
                 .subscribe(subscriber, e -> {
-                    logger.error("[{}] Se ha producido un error en el flujo del publicador!!!", MessageNativePubBus.class.getSimpleName());
+                    logger.error("[{}] Se ha producido un error en el flujo del publicador!!!", EmitterPubBus.class.getSimpleName());
                     logger.error(e.getMessage(), e);
                 });
     }
@@ -46,7 +44,7 @@ public class MessageNativePubBus implements Bus {
      */
     @Override
     public void subscribe(List<Consumer<Object>> subscribers) {
-        throw new UnsupportedOperationException("El [MessageNativePubBus] no soporta multiple consumidores!!!");
+        throw new UnsupportedOperationException();
     }
 
     /**

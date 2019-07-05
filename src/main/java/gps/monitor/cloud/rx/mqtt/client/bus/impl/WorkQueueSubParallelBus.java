@@ -11,23 +11,20 @@ import java.util.function.Consumer;
 /**
  * Representa la implementación de un {@link Bus} reactivo a traves de un {@link WorkQueueProcessor}
  * <p>
- * {@link MessageSubAsyncBus} tiene el proposito de consumir mensajes de los topicos subcritos a traves del
+ * {@link WorkQueueSubParallelBus} tiene el proposito de consumir mensajes de los topicos subcritos a traves del
  * {@link gps.monitor.cloud.rx.mqtt.client.integration.MqttGateway}.
  * <p>
- * Este bus trabaja parecido a una cola, 1 de los {@link Consumer} subscritos toma el mensaje actual del bus y lo procesa, este, no tiene garantia
- * que los mensajes se procesen en orden
+ * Este bus trabaja parecido a una cola, 1 de los {@link Consumer} subscritos toma el mensaje actual del bus y lo <b>procesa en paralelo</b>. No garantiza
+ * el orden de los mensajes
  *
  * @author daniel.carvajal
  * @see <a href="https://projectreactor.io/docs/core/release/api/reactor/core/publisher/WorkQueueProcessor.html">Project Reactor WorkQueueProcessor</a>
  */
-public class MessageSubAsyncBus implements Bus {
-
-    private static MessageSubAsyncBus mqttSubscriberBus;
+public class WorkQueueSubParallelBus implements Bus {
 
     private static WorkQueueProcessor<Object> processor = WorkQueueProcessor.create();
 
-    private static final Logger logger = LoggerFactory.getLogger(MessageSubAsyncBus.class);
-
+    private static final Logger logger = LoggerFactory.getLogger(WorkQueueSubParallelBus.class);
 
     /**
      * {@inheritDoc}
@@ -37,12 +34,12 @@ public class MessageSubAsyncBus implements Bus {
         processor
             .publish()
                 .autoConnect()
-             .subscribe(subscriber, e -> {
-                logger.error("[{}] Se ha producido un error en el flujo del subcriptor asincronico!!!", MessagePubBus.class.getSimpleName());
-                logger.error(e.getMessage(), e);
-             });
+             .parallel()
+                .subscribe(subscriber, e -> {
+                    logger.error("[{}] Se ha producido un error en el flujo del subcriptor paralelo asincronico!!!", WorkQueueSubParallelBus.class.getSimpleName());
+                    logger.error(e.getMessage(), e);
+                });
     }
-
 
     /**
      * {@inheritDoc}
@@ -51,15 +48,15 @@ public class MessageSubAsyncBus implements Bus {
     public void subscribe(List<Consumer<Object>> subscribers) {
         processor
             .publish()
-                .autoConnect();
+                .autoConnect()
+            .parallel();
         for (Consumer<Object> subscriber : subscribers) {
             processor.subscribe(subscriber, e -> {
-                logger.error("[{}] Se ha producido un error en el flujo del subcriptor asincronico!!!", MessagePubBus.class.getSimpleName());
+                logger.error("[{}] Se ha producido un error en el flujo del subcriptor paralelo asincronico!!!", WorkQueueSubParallelBus.class.getSimpleName());
                 logger.error(e.getMessage(), e);
             });
         }
     }
-
 
     /**
      * {@inheritDoc}
@@ -68,7 +65,6 @@ public class MessageSubAsyncBus implements Bus {
     public <T> void handle(T message) {
         processor.onNext(message);
     }
-
 
     /**
      * {@inheritDoc}

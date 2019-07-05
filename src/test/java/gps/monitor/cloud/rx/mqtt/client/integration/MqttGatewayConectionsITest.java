@@ -2,7 +2,7 @@ package gps.monitor.cloud.rx.mqtt.client.integration;
 
 
 import gps.monitor.cloud.rx.mqtt.client.bus.Bus;
-import gps.monitor.cloud.rx.mqtt.client.bus.impl.MessageNativeSubBus;
+import gps.monitor.cloud.rx.mqtt.client.bus.impl.DirectSubBus;
 import gps.monitor.cloud.rx.mqtt.client.conf.impl.MqttServerConfigApp;
 import gps.monitor.cloud.rx.mqtt.client.conf.impl.PropertiesConfigApp;
 import gps.monitor.cloud.rx.mqtt.client.listener.DefaultMqttListener;
@@ -42,7 +42,7 @@ public class MqttGatewayConectionsITest extends TestCase {
 
         // message listener with bus
         DefaultMqttListener messageListener = new DefaultMqttListener();
-        Bus messageNativeSubBus = new MessageNativeSubBus();
+        Bus messageNativeSubBus = new DirectSubBus();
         MessageConsumer messageConsumer = new TestSubcriberConsumer();
         //
         messageNativeSubBus.subscribe(messageConsumer);
@@ -146,7 +146,7 @@ public class MqttGatewayConectionsITest extends TestCase {
 
         // message listener with bus
         DefaultMqttListener messageListener = new DefaultMqttListener();
-        Bus messageNativeSubBus = new MessageNativeSubBus();
+        Bus messageNativeSubBus = new DirectSubBus();
         MessageConsumer messageConsumer = new TestSubcriberConsumer();
         //
         messageNativeSubBus.subscribe(messageConsumer);

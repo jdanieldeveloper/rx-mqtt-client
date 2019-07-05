@@ -1,8 +1,7 @@
 package gps.monitor.cloud.rx.mqtt.client.integration;
 
 import gps.monitor.cloud.rx.mqtt.client.bus.Bus;
-import gps.monitor.cloud.rx.mqtt.client.bus.impl.MessageNativeSubBus;
-import gps.monitor.cloud.rx.mqtt.client.bus.impl.MessageSubBus;
+import gps.monitor.cloud.rx.mqtt.client.bus.impl.DirectSubBus;
 import gps.monitor.cloud.rx.mqtt.client.conf.impl.MqttServerConfigApp;
 import gps.monitor.cloud.rx.mqtt.client.conf.impl.PropertiesConfigApp;
 
@@ -44,7 +43,7 @@ public class MqttGatewayITest extends TestCase {
 
         // message listener
         DefaultMqttListener messageListener = new DefaultMqttListener();
-        Bus messageNativeSubBus = new MessageNativeSubBus();
+        Bus messageNativeSubBus = new DirectSubBus();
         MessageConsumer messageConsumer = new TestSubcriberConsumer();
         //
         messageNativeSubBus.subscribe(messageConsumer);
@@ -154,7 +153,7 @@ public class MqttGatewayITest extends TestCase {
 
         // message listener with bus
         DefaultMqttListener messageListener = new DefaultMqttListener();
-        Bus messageNativeSubBus = new MessageNativeSubBus();
+        Bus messageNativeSubBus = new DirectSubBus();
         MessageConsumer messageConsumer = new TestSubcriberConsumer();
         //
         messageNativeSubBus.subscribe(messageConsumer);
@@ -272,7 +271,7 @@ public class MqttGatewayITest extends TestCase {
 
         // message listener with bus
         DefaultMqttListener messageListener = new DefaultMqttListener();
-        Bus messageNativeSubBus = new MessageNativeSubBus();
+        Bus messageNativeSubBus = new DirectSubBus();
         MessageConsumer messageConsumer = new TestSubcriberConsumer();
         //
         messageNativeSubBus.subscribe(messageConsumer);
@@ -349,7 +348,7 @@ public class MqttGatewayITest extends TestCase {
 
         // message listener with bus
         DefaultMqttListener messageListener = new DefaultMqttListener();
-        Bus messageNativeSubBus = new MessageNativeSubBus();
+        Bus messageNativeSubBus = new DirectSubBus();
         MessageConsumer messageConsumer = new TestSubcriberConsumer();
         //
         messageNativeSubBus.subscribe(messageConsumer);
@@ -461,7 +460,7 @@ public class MqttGatewayITest extends TestCase {
 
         // message listener with bus
         DefaultMqttListener messageListener = new DefaultMqttListener();
-        Bus messageNativeSubBus = new MessageNativeSubBus();
+        Bus messageNativeSubBus = new DirectSubBus();
         MessageConsumer messageConsumer = new TestSubcriberConsumer();
         //
         messageNativeSubBus.subscribe(messageConsumer);
@@ -545,7 +544,7 @@ public class MqttGatewayITest extends TestCase {
 
         // message listener with bus
         DefaultMqttListener messageListener = new DefaultMqttListener();
-        Bus messageNativeSubBus = new MessageNativeSubBus();
+        Bus messageNativeSubBus = new DirectSubBus();
         MessageConsumer messageConsumer = new TestSubcriberConsumer();
         //
         messageNativeSubBus.subscribe(messageConsumer);
@@ -648,7 +647,7 @@ public class MqttGatewayITest extends TestCase {
 
         // message listener with bus
         DefaultMqttListener messageListener = new DefaultMqttListener();
-        Bus messageNativeSubBus = new MessageNativeSubBus();
+        Bus messageNativeSubBus = new DirectSubBus();
         MessageConsumer messageConsumer = new TestSubcriberConsumer();
         //
         messageNativeSubBus.subscribe(messageConsumer);
@@ -814,7 +813,7 @@ public class MqttGatewayITest extends TestCase {
 
         // message listener with bus
         DefaultMqttListener messageListener = new DefaultMqttListener();
-        Bus messageNativeSubBus = new MessageNativeSubBus();
+        Bus messageNativeSubBus = new DirectSubBus();
         MessageConsumer messageConsumer = new TestSubcriberConsumer();
         //
         messageNativeSubBus.subscribe(messageConsumer);
@@ -890,7 +889,7 @@ public class MqttGatewayITest extends TestCase {
 
         // message listener with bus
         DefaultMqttListener messageListener = new DefaultMqttListener();
-        Bus messageNativeSubBus = new MessageNativeSubBus();
+        Bus messageNativeSubBus = new DirectSubBus();
         MessageConsumer messageConsumer = new TestSubcriberConsumer();
         //
         messageNativeSubBus.subscribe(messageConsumer);
