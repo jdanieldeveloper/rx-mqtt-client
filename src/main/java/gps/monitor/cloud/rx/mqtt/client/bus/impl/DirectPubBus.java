@@ -4,6 +4,7 @@ import gps.monitor.cloud.rx.mqtt.client.bus.Bus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.DirectProcessor;
+import reactor.core.publisher.UnicastProcessor;
 
 import java.time.Duration;
 import java.util.List;
@@ -20,7 +21,7 @@ import java.util.function.Consumer;
  */
 public class DirectPubBus implements Bus {
 
-    private static DirectProcessor<Object> processor = DirectProcessor.create();
+    private UnicastProcessor<Object> processor = UnicastProcessor.create();
 
     private static final Logger logger = LoggerFactory.getLogger(DirectPubBus.class);
 
@@ -32,7 +33,6 @@ public class DirectPubBus implements Bus {
         processor
             .publish()
                 .autoConnect()
-            .delayElements(Duration.ofMillis(500))
                 .subscribe(subscriber, e -> {
                     logger.error("[{}] Se ha producido un error en el flujo del publicador!!!", DirectPubBus.class.getSimpleName());
                     logger.error(e.getMessage(), e);

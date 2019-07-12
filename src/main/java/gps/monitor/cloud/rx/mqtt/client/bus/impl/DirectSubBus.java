@@ -4,6 +4,7 @@ import gps.monitor.cloud.rx.mqtt.client.bus.Bus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.DirectProcessor;
+import reactor.core.publisher.UnicastProcessor;
 
 import java.util.List;
 import java.util.function.Consumer;
@@ -22,7 +23,7 @@ import java.util.function.Consumer;
  */
 public class DirectSubBus implements Bus {
 
-    private static DirectProcessor<Object> processor = DirectProcessor.create();
+    private UnicastProcessor<Object> processor = UnicastProcessor.create();
 
     private static final Logger logger = LoggerFactory.getLogger(DirectSubBus.class.getCanonicalName());
 

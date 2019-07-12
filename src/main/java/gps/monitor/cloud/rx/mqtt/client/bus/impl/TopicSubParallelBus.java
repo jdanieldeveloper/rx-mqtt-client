@@ -23,7 +23,7 @@ import java.util.function.Consumer;
  */
 public class TopicSubParallelBus implements Bus {
 
-    private static TopicProcessor<Object> processor = TopicProcessor.create();
+    private TopicProcessor<Object> processor = TopicProcessor.create();
 
     private static final Logger logger = LoggerFactory.getLogger(TopicSubParallelBus.class);
 

@@ -22,7 +22,7 @@ import java.util.function.Consumer;
  */
 public class WorkQueueSubBus implements Bus {
 
-    private static WorkQueueProcessor<Object> processor = WorkQueueProcessor.create();
+    private WorkQueueProcessor<Object> processor = WorkQueueProcessor.create();
 
     private static final Logger logger = LoggerFactory.getLogger(WorkQueueSubBus.class);
 

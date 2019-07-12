@@ -22,7 +22,7 @@ import java.util.function.Consumer;
  */
 public class EmitterSubBus implements Bus {
 
-    private static EmitterProcessor<Object> processor = EmitterProcessor.create();
+    private EmitterProcessor<Object> processor = EmitterProcessor.create();
 
     private static final Logger logger = LoggerFactory.getLogger(EmitterSubBus.class.getCanonicalName());
 
